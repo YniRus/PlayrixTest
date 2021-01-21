@@ -1,22 +1,22 @@
 let PixiScene = {
 
     app : null,
+    sprites : {},
 
     selectedStair : null,
-
-    sprites : {},
 
     init : async function () {
         this.app = new PIXI.Application({
             resizeTo : document.body,
-            backgroundColor : '0xEEEEEE'
+            backgroundColor : '0x000000'
         });
 
-        this.app.ticker.speed = 2;
+        this.app.ticker.speed = 1;
 
-        // Add the view to the DOM
         document.body.appendChild(this.app.view);
+        // Загружаем background. От него будут позиционироваться все остальные элементы
         this.renderBackground(await this.loadResource('background', 'res/img/back.png'));
+        // Загружаем все ресурсы в сцену
         this.renderStatic('logo', await this.loadResource('logo', 'res/img/logo.png'),{
             top : 0,
             left : 34
@@ -62,6 +62,8 @@ let PixiScene = {
             left : 202
         });
 
+        // Динамика
+
         this.renderStatic('hammer', await this.loadResource('hammer', 'res/img/icon_hammer.png'),{
             top : 258,
             left : 1087,
@@ -70,8 +72,6 @@ let PixiScene = {
             buttonMode : true,
             visible : false
         });
-
-        // Динамика
 
         this.renderStatic('Layer_2', await this.loadResource('Layer_2', 'res/img/final/Layer 2.png'), {
             top : 53,
@@ -90,18 +90,18 @@ let PixiScene = {
             visible : true
         });
         this.renderStatic('new_stair_1', await this.loadResource('new_stair_1', 'res/img/stair/new_stair_01.png'), {
-            top : 20,
-            left : 917,
+            top : 15,
+            left : 908,
             visible : false
         });
         this.renderStatic('new_stair_2', await this.loadResource('new_stair_2', 'res/img/stair/new_stair_02.png'), {
-            top : 20,
-            left : 927,
+            top : 25,
+            left : 898,
             visible : false
         });
         this.renderStatic('new_stair_3', await this.loadResource('new_stair_3', 'res/img/stair/new_stair_03.png'), {
-            top : 15,
-            left : 927,
+            top : 20,
+            left : 910,
             visible : false
         });
 
@@ -164,11 +164,12 @@ let PixiScene = {
             visible : false
         });
 
+        // Инициализация анимации пульсации кнопки "Continue"
         this.pulse('btn');
 
         this.fadeIn('hammer', {
-            timeout : 0,
-            animationTime : 800,
+            timeout : 1000,
+            animationTime : 500,
             animationOffsetX : 0,
             animationOffsetY : -100,
         });
@@ -187,7 +188,7 @@ let PixiScene = {
     },
 
     hammerClick : function () {
-        let generalAnimationTime = 800;
+        let generalAnimationTime = 500;
         this.fadeOut('hammer',{
             animationTime : generalAnimationTime,
             animationOffsetY : -100
@@ -213,7 +214,6 @@ let PixiScene = {
     },
 
     stairPreviewClick : function (name) {
-        let stair = this.sprites[name];
         if(name === this.selectedStair) {
             return;
         }
@@ -237,6 +237,7 @@ let PixiScene = {
                 this.fadeIn('new_stair_1',{
                     animationTime : 800,
                     animationOffsetY : -100,
+                    animationFunction : this.easeInOutAnimation
                 });
                 ok.position.x = 836;
                 choosed.position.x = 850;
@@ -255,6 +256,7 @@ let PixiScene = {
                 this.fadeIn('new_stair_2',{
                     animationTime : 800,
                     animationOffsetY : -100,
+                    animationFunction : this.easeInOutAnimation
                 });
                 ok.position.x = 962;
                 choosed.position.x = 979;
@@ -273,6 +275,7 @@ let PixiScene = {
                 this.fadeIn('new_stair_3',{
                     animationTime : 800,
                     animationOffsetY : -100,
+                    animationFunction : this.easeInOutAnimation
                 });
                 ok.position.x = 1090;
                 choosed.position.x = 1107;
@@ -288,6 +291,7 @@ let PixiScene = {
         this.fadeIn('Layer_3',{
             animationTime : 400
         });
+        // Делаем неактивными интерактивные элементы позади слоёв
         this.sprites.stair_preview_1.interactive = false;
         this.sprites.stair_preview_2.interactive = false;
         this.sprites.stair_preview_3.interactive = false;
@@ -299,6 +303,9 @@ let PixiScene = {
             animationTime : 1000,
             animationOffsetX : 0,
             animationOffsetY : 0,
+            animationFunction : (value) => {
+                return value;
+            },
         },options);
 
         let sprite = this.sprites[name];
@@ -340,8 +347,8 @@ let PixiScene = {
 
             sprite.alpha = animationDelayed / options.animationTime;
 
-            let positionChangeX = lost * options.animationOffsetX;
-            let positionChangeY = lost * options.animationOffsetY;
+            let positionChangeX = options.animationFunction(lost) * options.animationOffsetX;
+            let positionChangeY = options.animationFunction(lost) * options.animationOffsetY;
 
             sprite.position.x = startPositionX - positionChangeX;
             sprite.position.y = startPositionY - positionChangeY;
@@ -354,6 +361,9 @@ let PixiScene = {
             animationTime : 1000,
             animationOffsetX : 0,
             animationOffsetY : 0,
+            animationFunction : (value) => {
+                return value;
+            },
         },options);
 
         let sprite = this.sprites[name];
@@ -389,12 +399,16 @@ let PixiScene = {
 
             sprite.alpha = 1 - animationDelayed / options.animationTime;
 
-            let positionChangeX = lost * options.animationOffsetX;
-            let positionChangeY = lost * options.animationOffsetY;
+            let positionChangeX = options.animationFunction(lost) * options.animationOffsetX;
+            let positionChangeY = options.animationFunction(lost) * options.animationOffsetY;
 
             sprite.position.x = nativePositionX + positionChangeX;
             sprite.position.y = nativePositionY + positionChangeY;
         }
+    },
+
+    easeInOutAnimation: function (v) {
+        return v < 0.5 ? 4 * Math.pow(v, 3) : 1 - Math.pow(-2 * v + 2, 3) / 2;
     },
 
     pulse : function (name,options = {}) {
@@ -442,7 +456,7 @@ let PixiScene = {
     },
 
     renderBackground : function ({loader, resources}) {
-        const background = new PIXI.Sprite(resources.background.texture);
+        const background = this.sprites.background ? this.sprites.background : new PIXI.Sprite(resources.background.texture);
 
         let width = background.width;
         let height = background.height;
@@ -457,10 +471,15 @@ let PixiScene = {
             background.width = background.height / height *  width;
         }
 
+        background.x = (window.innerWidth - background.width) / 2;
+        background.y = (window.innerHeight - background.height) / 2;
+
         background.sortableChildren = true;
 
-        this.sprites.background = background;
-        this.app.stage.addChild(this.sprites.background);
+        if(!this.sprites.background) {
+            this.sprites.background = background;
+            this.app.stage.addChild(this.sprites.background);
+        }
     },
 
     renderStatic : function (name, {loader, resources}, options = {}) {
@@ -500,3 +519,9 @@ let PixiScene = {
 document.addEventListener('DOMContentLoaded', function(){
     PixiScene.init();
 });
+window.onresize = function () {
+    // Изменяем размер background. Всё остальное под него подстроится
+    if(PixiScene.app) {
+        PixiScene.renderBackground({loader : PixiScene.app.loader,resources : PixiScene.app.loader.resources});
+    }
+}
